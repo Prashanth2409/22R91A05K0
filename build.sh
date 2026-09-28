@@ -9,7 +9,7 @@ FILES=(
   index.html about.html admin.html checkout.html collections.html contact.html policies.html product.html import-template.csv
   css/admin.css css/commerce.css css/experience.css css/hero.css css/product.css css/refinement.css css/styles.css
   js/admin-operations.js js/admin.js js/bootstrap.js js/catalog.js js/checkout.js js/live-catalog.js js/local-demo-api.js js/main.js js/product-page.js js/shop.js js/store.js
-  img/about.jpg img/hero.jpg img/look-1.jpg img/look-2.jpg img/look-3.jpg img/p-cap.jpg img/p-cargo.jpg img/p-hoodie.jpg img/p-jacket.jpg img/p-jeans.jpg img/p-joggers.jpg img/p-shirt.jpg img/p-tee-acid.jpg img/p-tee-black.jpg img/p-tote.jpg img/statement-bg-v2.png img/statement-crosswalk.png
+  img/about.webp img/hero.webp img/look-1.webp img/look-2.webp img/look-3.webp img/p-cap.webp img/p-cargo.webp img/p-hoodie.webp img/p-jacket.webp img/p-jeans.webp img/p-joggers.webp img/p-shirt.webp img/p-tee-acid.webp img/p-tee-black.webp img/p-tote.webp img/statement-bg-v2.webp img/statement-crosswalk.webp
 )
 
 for file in "${FILES[@]}"; do
@@ -27,11 +27,6 @@ cat > .site/_redirects <<'EOF'
 /policies /policies.html 200
 EOF
 
-# Prevent native form reload if payment preparation fails; checkout is handled entirely by JS.
-sed -i 's/type="submit">Pay securely with Razorpay Test/type="button">Pay securely with Razorpay Test/' .site/js/checkout.js
-sed -i "s/form.addEventListener('submit',async e=>{/button.addEventListener('click',async e=>{if(!form.reportValidity())return;/" .site/js/checkout.js
-
-# Make stale browser caches less likely while testing.
 cat > .site/_headers <<'EOF'
 /*.html
   Cache-Control: no-cache, no-store, must-revalidate
