@@ -1,0 +1,1 @@
+Chunks c00-c10 form a base64-encoded ZIP of the FLIQ static app and Netlify Functions.
