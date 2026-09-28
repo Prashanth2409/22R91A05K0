@@ -1,7 +1,7 @@
 [build]
   command = "bash build.sh"
   publish = ".site"
-  functions = "netlify/functions"
+  functions = ".site/netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
