@@ -1,0 +1,1 @@
+Clean embedded bundle deployment: no live-site curl dependency.
