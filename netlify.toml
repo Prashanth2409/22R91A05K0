@@ -1,7 +1,7 @@
 [build]
-  command = "rm -rf .site && mkdir .site && base64 -d bundle.b64 > /tmp/fliq.zip && unzip -q /tmp/fliq.zip -d .site"
+  command = "bash build.sh"
   publish = ".site"
-  functions = ".site/netlify/functions"
+  functions = "netlify/functions"
 
 [build.environment]
   NODE_VERSION = "20"
