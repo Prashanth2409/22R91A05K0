@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="https://fliqclothing.netlify.app"
+BASE="https://poetic-tartufo-ca76cb.netlify.app"
 rm -rf .site
 mkdir -p .site/css .site/js .site/img
 
@@ -9,11 +9,9 @@ fetch_required() {
   local remote="$1"
   local out="$2"
   echo "Fetching $remote -> $out"
-  curl --retry 3 --retry-delay 1 -fsSL "$BASE/$remote" -o ".site/$out"
+  curl --retry 4 --retry-delay 1 -fsSL "$BASE/$remote" -o ".site/$out"
 }
 
-# Fetch the actual static files directly. Do not depend on pretty-route redirects
-# from the old drag-and-drop site because /admin and similar routes can 404.
 PAGES=(
   index.html about.html admin.html checkout.html collections.html contact.html policies.html product.html
 )
@@ -29,7 +27,6 @@ for file in "${CORE_FILES[@]}"; do
   fetch_required "$file" "$file"
 done
 
-# Optional demo assets should never make the whole build fail.
 OPTIONAL_FILES=(
   import-template.csv
   img/about.webp img/hero.webp img/look-1.webp img/look-2.webp img/look-3.webp
