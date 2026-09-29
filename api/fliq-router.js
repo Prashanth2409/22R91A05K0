@@ -60,11 +60,10 @@ function sendNodeResponse(res,response){
 }
 
 module.exports=async function handler(req,res){
-  let url;
   try{
     const {configuredStore,createAPI}=await modules();
     const env=environment();
-    url=requestUrl(req);
+    const url=requestUrl(req);
     const body=await requestBody(req);
     const init={method:req.method||'GET',headers:requestHeaders(req),redirect:'manual'};
     if(body&&body.length)init.body=body;
@@ -74,7 +73,13 @@ module.exports=async function handler(req,res){
     let response;
     if(url.pathname==='/api/health'){
       const snapshot=await store.read(d=>({revision:d.revision,products:Array.isArray(d.products)?d.products.length:0,orders:Array.isArray(d.orders)?d.orders.length:0}));
-      response=new Response(JSON.stringify({ok:true,database:'connected',region:process.env.VERCEL_REGION||null,...snapshot}),{
+      response=new Response(JSON.stringify({
+        ok:true,
+        database:'connected',
+        paymentConfigured:Boolean(env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')&&env.RAZORPAY_KEY_SECRET),
+        region:process.env.VERCEL_REGION||null,
+        ...snapshot
+      }),{
         status:200,
         headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}
       });
@@ -87,7 +92,6 @@ module.exports=async function handler(req,res){
     res.statusCode=503;
     res.setHeader('content-type','application/json; charset=utf-8');
     res.setHeader('cache-control','no-store');
-    const health=(url?.pathname==='/api/health')||String(req.url||'').includes('__fliq_path=health')||String(req.url||'').includes('/api/health');
-    res.end(JSON.stringify({error:'FLIQ cloud API is unavailable.',...(health?{diagnostic:String(error?.message||error).slice(0,300),code:error?.code||null}:{})}));
+    res.end(JSON.stringify({error:'FLIQ cloud API is unavailable.'}));
   }
 };
