@@ -18,5 +18,6 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - run: node --check "api/[...path].mjs"
+      - run: node --check api/fliq-router.mjs
+      - run: node --check public/js/bootstrap.js
       - run: node --check public/js/checkout.js
