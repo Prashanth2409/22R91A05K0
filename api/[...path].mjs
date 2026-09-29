@@ -13,7 +13,13 @@ const environment=()=>Object.fromEntries(keys.map(key=>[key,process.env[key]]));
 async function handle(request){
  try{
   const env=environment();
-  return await createAPI(configuredStore(env),env)(request);
+  const headers=new Headers(request.headers);
+  if(!headers.has('x-nf-client-connection-ip')){
+   const forwarded=headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+   if(forwarded)headers.set('x-nf-client-connection-ip',forwarded);
+  }
+  const normalized=new Request(request,{headers});
+  return await createAPI(configuredStore(env),env)(normalized);
  }catch(error){
   console.error('FLIQ Vercel API bootstrap error',error?.message||error);
   return new Response(JSON.stringify({error:'Configure DATABASE_URL and production environment variables before using shared checkout/Admin.'}),{
