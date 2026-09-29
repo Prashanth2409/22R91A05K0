@@ -13,7 +13,13 @@ function modules(){
   ]).then(([storage,api])=>({configuredStore:storage.configuredStore,createAPI:api.createAPI}));
 }
 
-const environment=()=>Object.fromEntries(keys.map(key=>[key,process.env[key]]));
+function cleanEnv(value){
+  if(value===undefined||value===null)return value;
+  let text=String(value).trim();
+  if((text.startsWith('"')&&text.endsWith('"'))||(text.startsWith("'")&&text.endsWith("'")))text=text.slice(1,-1).trim();
+  return text;
+}
+const environment=()=>Object.fromEntries(keys.map(key=>[key,cleanEnv(process.env[key])]));
 
 async function requestBody(req){
   if(['GET','HEAD'].includes(req.method||'GET'))return null;
@@ -83,6 +89,28 @@ module.exports=async function handler(req,res){
         status:200,
         headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}
       });
+    }else if(url.pathname==='/api/payment-health'){
+      if(!env.RAZORPAY_KEY_ID?.startsWith('rzp_test_')||!env.RAZORPAY_KEY_SECRET){
+        response=new Response(JSON.stringify({ok:false,error:'Razorpay TEST credentials are not configured.'}),{status:503,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+      }else{
+        let providerResponse;
+        try{
+          providerResponse=await fetch('https://api.razorpay.com/v1/payments?count=1',{
+            method:'GET',
+            signal:AbortSignal.timeout(10000),
+            headers:{authorization:'Basic '+Buffer.from(env.RAZORPAY_KEY_ID+':'+env.RAZORPAY_KEY_SECRET).toString('base64')}
+          });
+          let providerData={};
+          try{providerData=await providerResponse.json();}catch{}
+          if(providerResponse.ok){
+            response=new Response(JSON.stringify({ok:true,mode:'test',provider:'razorpay'}),{status:200,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+          }else{
+            response=new Response(JSON.stringify({ok:false,provider:'razorpay',status:providerResponse.status,code:providerData?.error?.code||'',description:providerData?.error?.description||'Razorpay rejected the configured TEST credentials.'}),{status:502,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+          }
+        }catch(error){
+          response=new Response(JSON.stringify({ok:false,provider:'razorpay',error:'connection_failed',description:String(error?.message||error)}),{status:502,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
+        }
+      }
     }else{
       response=await createAPI(store,env)(request);
     }
