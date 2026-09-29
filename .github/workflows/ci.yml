@@ -28,6 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     steps:
+      - uses: actions/checkout@v4
       - name: Wait for Vercel production promotion
         run: sleep 45
       - name: Discover live FLIQ production alias
@@ -98,3 +99,5 @@ jobs:
           echo
           [ "$code" = "200" ] || exit 1
           grep -q '"ok":true' /tmp/payment-health.json
+      - name: Verify live Razorpay TEST order creation
+        run: node scripts/razorpay-live-smoke.mjs
