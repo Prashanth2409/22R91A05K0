@@ -89,3 +89,12 @@ jobs:
           if(d.role!=='owner')throw Error('Admin session cookie did not persist');
           console.log('ADMIN SESSION PASS');
           NODE
+      - name: Verify Razorpay TEST credentials
+        shell: bash
+        run: |
+          code=$(curl -LsS --max-time 20 -o /tmp/payment-health.json -w '%{http_code}' "$FLIQ_BASE/api/payment-health" || true)
+          echo "PAYMENT HEALTH HTTP $code"
+          cat /tmp/payment-health.json || true
+          echo
+          [ "$code" = "200" ] || exit 1
+          grep -q '"ok":true' /tmp/payment-health.json
