@@ -1,7 +1,7 @@
 (async function(){
   const root=document.getElementById('checkout-root'),products=window.FliqCatalog.products,byId=new Map(products.map(p=>[p.id,p]));
   const store=window.FliqStore.createStore(products,localStorage),money=n=>new Intl.NumberFormat('en-IN',{style:'currency',currency:'INR'}).format(n);
-  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#39;'}[c]));
+  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let busy=false,shippingFee=0,attempt=null;
   let requestId=crypto.randomUUID();
   const recoveryKey='fliq-checkout-recovery';
