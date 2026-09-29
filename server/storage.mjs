@@ -7,8 +7,23 @@ export function memoryStore(initial=seed()){
  let data=structuredClone(initial),queue=Promise.resolve();
  return {kind:'isolated-test',async transaction(fn){const work=queue.then(async()=>{const draft=structuredClone(data);const result=await fn(draft);data=draft;return result;});queue=work.catch(()=>{});return work;},async read(fn){await queue;return fn(structuredClone(data));}};
 }
+function poolConfig(connectionString){
+ const config={connectionString,max:3,connectionTimeoutMillis:8000,statement_timeout:15000};
+ try{
+  const url=new URL(connectionString);
+  if(/(?:^|\.)supabase\.com$/i.test(url.hostname)){
+   // Supabase transaction-pooler TLS is encrypted, but its chain can be rejected
+   // by serverless runtimes. Remove connection-string sslmode so pg does not
+   // overwrite the explicit TLS policy below.
+   url.searchParams.delete('sslmode');
+   config.connectionString=url.toString();
+   config.ssl={rejectUnauthorized:false};
+  }
+ }catch{}
+ return config;
+}
 export function postgresStore(connectionString,injectedPool){
- const pool=injectedPool||new pg.Pool({connectionString,max:3,connectionTimeoutMillis:8000,statement_timeout:15000});
+ const pool=injectedPool||new pg.Pool(poolConfig(connectionString));
  let initPromise;
  const ensureInitialized=()=>initPromise??=(async()=>{
   const existing=await pool.query('SELECT 1 FROM fliq_state WHERE id=1');
