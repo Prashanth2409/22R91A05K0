@@ -12,11 +12,16 @@
   try{
     const response=await fetch('/api/catalog?'+query,{cache:'no-store'});
     if(!response.ok)throw Error('Catalog API unavailable');
-    window.FliqCatalog=await response.json();
+    const data=await response.json();
+    if(!Array.isArray(data.products)||!Array.isArray(data.categories))throw Error('Invalid catalog payload');
+    window.FliqCatalog=data;
   }catch{
     live=false;
     await load('/js/catalog.js');
     if(!window.FliqCatalog)throw Error('Catalog unavailable');
+    if(!Array.isArray(window.FliqCatalog.listingIds))window.FliqCatalog.listingIds=window.FliqCatalog.products.map(p=>p.id);
+    if(!window.FliqCatalog.pagination)window.FliqCatalog.pagination={page:1,limit:window.FliqCatalog.products.length,total:window.FliqCatalog.products.length,pages:1};
+    if(!window.FliqCatalog.revision)window.FliqCatalog.revision=0;
   }
   try{
     await load('/js/store-settings.js');
