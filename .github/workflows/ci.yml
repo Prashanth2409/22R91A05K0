@@ -18,5 +18,74 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - run: node --check api/fliq-router.js
       - run: node --check public/js/bootstrap.js
       - run: node --check public/js/checkout.js
+
+  live-smoke:
+    if: github.event_name == 'push'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Wait for Vercel production promotion
+        run: sleep 45
+      - name: Discover live FLIQ production alias
+        shell: bash
+        run: |
+          set -u
+          candidates=(
+            "https://fliq-commerce.vercel.app"
+            "https://fliq-commerce-rowdies1.vercel.app"
+            "https://fliq-commerce-ai43fb5c1-rowdies1.vercel.app"
+          )
+          found=""
+          for base in "${candidates[@]}"; do
+            echo "PROBE $base/api/health"
+            code=$(curl -L --max-time 20 -sS -o /tmp/fliq-health -w '%{http_code}' "$base/api/health" || true)
+            echo "HTTP $code"
+            head -c 800 /tmp/fliq-health 2>/dev/null || true
+            echo
+            if [ "$code" = "200" ] && grep -q '"ok":true' /tmp/fliq-health; then
+              found="$base"
+              break
+            fi
+          done
+          if [ -z "$found" ]; then
+            echo "No candidate production alias returned a healthy FLIQ API."
+            exit 1
+          fi
+          echo "FLIQ_BASE=$found" >> "$GITHUB_ENV"
+          echo "LIVE BASE: $found"
+      - name: Verify catalog API
+        shell: bash
+        run: |
+          curl -fLsS "$FLIQ_BASE/api/catalog?limit=8" -o /tmp/catalog.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const d=JSON.parse(fs.readFileSync('/tmp/catalog.json','utf8'));
+          if(!Array.isArray(d.products)||d.products.length<1)throw Error('Live catalog contains no products');
+          if(!Array.isArray(d.categories)||d.categories.length<1)throw Error('Live catalog contains no categories');
+          console.log('CATALOG PASS',d.products.length,'products returned');
+          NODE
+      - name: Verify admin login and session
+        shell: bash
+        run: |
+          curl -fLsS -c /tmp/fliq.cookies \
+            -H 'content-type: application/json' \
+            --data '{"username":"admin","password":"admin"}' \
+            "$FLIQ_BASE/api/login" -o /tmp/login.json
+          cat /tmp/login.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const d=JSON.parse(fs.readFileSync('/tmp/login.json','utf8'));
+          if(d.role!=='owner'||!d.csrf)throw Error('Admin login did not return owner session');
+          console.log('ADMIN LOGIN PASS');
+          NODE
+          curl -fLsS -b /tmp/fliq.cookies "$FLIQ_BASE/api/session" -o /tmp/session.json
+          node - <<'NODE'
+          const fs=require('fs');
+          const d=JSON.parse(fs.readFileSync('/tmp/session.json','utf8'));
+          if(d.role!=='owner')throw Error('Admin session cookie did not persist');
+          console.log('ADMIN SESSION PASS');
+          NODE
