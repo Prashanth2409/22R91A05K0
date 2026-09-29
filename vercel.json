@@ -1,16 +1,22 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "public",
   "cleanUrls": true,
+  "regions": ["bom1"],
   "rewrites": [
     {
       "source": "/__fliq/razorpay/create-order",
-      "destination": "/api/checkout"
+      "destination": "/api/fliq-router?__fliq_path=checkout"
     },
     {
       "source": "/__fliq/razorpay/verify-payment",
-      "destination": "/api/checkout/verify"
+      "destination": "/api/fliq-router?__fliq_path=checkout/verify"
+    },
+    {
+      "source": "/api/:match*",
+      "destination": "/api/fliq-router?__fliq_path=:match*"
     }
   ],
   "headers": [
