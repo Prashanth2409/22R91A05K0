@@ -1,0 +1,6 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createStore} from '../public/js/store.js';
+const products=[{id:'qa',price:799,sizes:['Free Size','30'],stock:{'Free Size':3,'30':2},variants:[{size:'Free Size',color:'Dusty Mauve',quantity:3},{size:'30',color:'White',quantity:2}]}];
+test('cart/wishlist add, quantity, remove, persistence and exact variant stock',()=>{let value=null;const storage={getItem:()=>value,setItem:(k,v)=>value=v},s=createStore(products,storage);s.toggleWish('qa');assert.deepEqual(s.state.wishlist,['qa']);assert.equal(s.add('qa','Free Size',1,'Dusty Mauve'),true);assert.equal(s.setQuantity('qa','Free Size',3,'Dusty Mauve'),true);assert.equal(s.subtotal(),2397);assert.equal(s.add('qa','Free Size',1,'Dusty Mauve'),false);assert.equal(s.add('qa','30',1,'Dusty Mauve'),false);assert.equal(createStore(products,storage).count(),3);s.remove('qa','Free Size','Dusty Mauve');assert.equal(s.count(),0);s.toggleWish('qa');assert.deepEqual(s.state.wishlist,[]);});
+test('unavailable browser storage does not crash cart controls',()=>{const s=createStore(products,{getItem(){throw Error('blocked');},setItem(){throw Error('blocked');}});assert.equal(s.add('qa','30',1,'White'),true);assert.equal(s.persistent,false);s.clearCart();assert.equal(s.count(),0);});

@@ -1,0 +1,9 @@
+node_modules/
+.netlify/
+.env
+.env.*
+!.env.example
+.local/
+dist/
+drop-package/
+*.log

@@ -1,7 +1,26 @@
 [build]
-  command = "bash build.sh"
-  publish = ".site"
-  functions = ".site/netlify/functions"
-
+  command = "npm run build"
+  publish = "public"
+  functions = "netlify/functions"
 [build.environment]
-  NODE_VERSION = "20"
+  NODE_VERSION = "22"
+[functions]
+  node_bundler = "esbuild"
+  included_files = ["public/js/catalog.js"]
+[[redirects]]
+  from = "/__fliq/razorpay/create-order"
+  to = "/.netlify/functions/razorpay-create-order"
+  status = 200
+[[redirects]]
+  from = "/__fliq/razorpay/verify-payment"
+  to = "/.netlify/functions/razorpay-verify-payment"
+  status = 200
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "same-origin"
+[[headers]]
+  for = "/js/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

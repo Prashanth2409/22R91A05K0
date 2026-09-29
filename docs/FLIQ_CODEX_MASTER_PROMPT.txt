@@ -1,0 +1,659 @@
+FLIQ — MASTER IMPLEMENTATION BRIEF
+Final Codex Continuation Prompt + Product/Operations Specification
+
+You are continuing work on the existing FLIQ UNISEX CLOTHING project.
+
+IMPORTANT CONTEXT
+- This is not a new project. Do NOT rebuild from scratch.
+- Inspect the current repository first and preserve all working UI, styling, routes, storefront, admin functionality, and any successful Razorpay work already present.
+- The proven Razorpay flow is:
+  1) validate checkout fields
+  2) create Razorpay TEST order server-side
+  3) open Razorpay Checkout immediately with Razorpay.open()
+  4) verify payment signature server-side
+  5) only after verification, create the FLIQ order
+  6) reduce inventory
+  7) show order in Admin
+  8) show a proper customer order-confirmation screen
+- Never expose Razorpay secret keys in frontend code.
+- Current preview target: Netlify. Razorpay TEST must work after Netlify deployment through secure server-side functions.
+- Do not depend on localhost-only servers.
+- Keep architecture portable for a later production backend/hosting choice.
+
+1. PRESERVE EXISTING DESIGN AND WORKING FEATURES
+Preserve:
+- existing FLIQ visual identity, fonts and colors
+- premium streetwear / Gen-Z feel
+- transparent/floating header
+- storefront
+- product detail page
+- cart
+- wishlist
+- checkout
+- admin
+- mobile responsiveness
+- working Razorpay TEST flow
+
+Do NOT:
+- redesign unnecessarily
+- break existing pages
+- reintroduce the failed old checkout flow
+- hardcode future product categories, sizes, colors or collections
+- use browser/localStorage as the final production source of truth
+
+2. NETLIFY PREVIEW
+The user will preview/test by deploying to Netlify.
+Required:
+- storefront works
+- /admin works
+- /checkout works
+- future tracking route works
+- Razorpay order creation and verification work via Netlify-compatible server-side functions
+- no localhost dependency
+
+3. RAZORPAY CHECKOUT
+Required flow:
+Customer checkout
+→ validate fields
+→ create Razorpay TEST order server-side
+→ open Razorpay Checkout
+→ customer completes test payment
+→ verify signature server-side
+→ create order
+→ assign unique FLIQ Order ID
+→ reduce inventory
+→ save order
+→ show order in Admin
+→ show confirmation page
+
+Important:
+- Pay button must be controlled JS, not a normal form submit that triggers browser address/autofill behavior first
+- load checkout.js reliably
+- show clear errors for SDK failure, order-creation failure, cancellation and verification failure
+- never create a paid order before server-side verification succeeds
+
+4. ORDER CONFIRMATION EXPERIENCE
+Replace the current empty-cart result after payment with a real FLIQ confirmation page.
+
+Use this exact hero copy:
+DROP SECURED.
+IT’S YOURS.
+WE’RE GETTING IT STREET-READY.
+
+Show:
+- FLIQ Order ID
+- PAID status
+- product image(s)
+- product name
+- selected color
+- selected size
+- quantity
+- subtotal
+- shipping
+- total paid
+- customer name
+- phone
+- email
+- delivery address
+- order placed date/time
+- expected delivery date/range
+- current fulfillment status
+- Track Order button
+- Continue Shopping button
+
+Keep it premium, concise and clearly FLIQ branded.
+
+5. UNIQUE ORDER IDS
+Every verified order must get a server-generated unique order ID.
+Requirements:
+- never duplicated
+- concurrency-safe
+- not based on browser/localStorage counters
+- searchable in Admin
+- shown on confirmation page, WhatsApp, tracking page and admin record
+- linked to payment ID, customer, order items and fulfillment history
+A format like FLIQ-20260929-0001 is acceptable if implemented safely.
+
+6. ADMIN FULFILLMENT — DRAG & DROP
+Replace/upgrade the plain status UI with an immersive drag-and-drop fulfillment board.
+
+Stages:
+RECEIVED / PAID
+→ PROCESSING
+→ PACKED
+→ DISPATCHED
+→ OUT FOR DELIVERY
+→ DELIVERED
+
+Also:
+CANCELLED as a separate terminal/drop zone.
+
+Behavior:
+- order cards are draggable
+- drag/drop updates status immediately
+- card lifts/scales while dragging
+- destination highlights
+- smooth settle animation
+- status syncs to orders table, order detail, customer tracking and WhatsApp/status workflow
+- state persists after refresh
+- keep audit/status history
+- record who changed status and when
+- allow controlled manual correction if needed
+
+Order details should show shipping address, customer contact, payment info, items, status, timeline, courier, tracking ID and expected delivery.
+
+7. CUSTOMER TRACK ORDER PAGE
+Create a branded Track Order page.
+Timeline:
+ORDER CONFIRMED
+→ PROCESSING
+→ PACKED
+→ DISPATCHED
+→ OUT FOR DELIVERY
+→ DELIVERED
+
+Show:
+- Order ID
+- product preview
+- payment status
+- current status
+- progress/timeline
+- expected delivery
+- delivery address
+- courier name when available
+- tracking ID when available
+- latest update timestamp
+
+Admin fulfillment changes must sync to this page.
+
+Use the same tone:
+DROP SECURED.
+IT’S YOURS.
+WE’RE GETTING IT STREET-READY.
+
+8. WHATSAPP ORDER CONFIRMATION
+After successful verified order creation:
+- send an automatic WhatsApp confirmation through an official WhatsApp Business / Cloud API integration
+- do not use insecure browser-only sending
+
+Message should include:
+- FLIQ order confirmation
+- Order ID
+- Payment: Paid
+- Total
+- Expected delivery
+- Track Order link
+
+Keep integration modular.
+Store credentials server-side.
+If WhatsApp credentials are not configured, the order must still succeed and the UI should fail gracefully.
+Record send/delivery status if available.
+
+9. WHATSAPP BROADCASTING
+Add Admin section: WhatsApp / Broadcasts.
+Use cases:
+- new drops
+- restocks
+- offers
+- collection alerts
+- store announcements
+
+Support:
+- customer opt-in/consent
+- audience segments
+- templates
+- draft
+- send
+- logs/status
+
+Example segments:
+Recent Customers
+Hoodie Buyers
+High Value Customers
+Restock Interested
+New Drop Audience
+
+Use official WhatsApp APIs only.
+
+10. GOOGLE SHEETS BULK IMPORT / SYNC
+Bulk import must be extremely easy for a non-technical owner.
+
+Primary flow:
+1) owner maintains Google Sheet
+2) Admin has Google Sheets Import/Sync
+3) connect/paste sheet
+4) preview rows
+5) validate
+6) import/sync
+7) products update
+
+Keep CSV fallback if useful.
+
+Agreed sheet structure:
+Product Name
+Category
+Description
+Price
+Colors
+Size XS
+Size S
+Size M
+Size L
+Size XL
+Size XXL
+Total Stock
+Image URL 1
+Image URL 2
+Image URL 3
+Image URL 4
+
+Rules:
+- Product Name = text
+- Category maps to dynamic category system
+- Description appears on product page
+- Price = positive numeric
+- Colors = multiple values such as Black, White, Olive
+- size stock = whole numbers >= 0
+- Total Stock = calculated
+- Image URL 1 = main image
+- Image URL 2–4 = gallery
+
+Import UX:
+- sheet link/connect
+- preview before import
+- auto-detect/match columns
+- highlight invalid rows
+- detect duplicates
+- clear summary, e.g. “42 added • 3 need attention”
+- importing 10 products should take minutes, not require technical knowledge
+
+11. FULLY DYNAMIC CATALOG — NO DEVELOPER DEPENDENCY
+The owner must be able to evolve the store without calling a developer.
+
+A. Categories
+Admin must allow + New Category.
+Future examples:
+Sleeveless Tops
+Socks
+Belts
+Caps
+Overshirts
+Any new type
+
+When created, the new category should automatically become usable in:
+- product editor
+- import mapping
+- collections/shop pages
+- filters
+- navigation where appropriate
+
+B. Products
+Admin can:
+- add
+- edit
+- delete/archive
+- publish/unpublish
+- set name
+- description
+- price
+- optional sale price
+- category
+- images
+- variants
+- stock
+
+C. Sizes
+Do not limit system to XS–XXL.
+Support custom values such as:
+Free Size
+One Size
+28
+30
+32
+34
+etc.
+
+D. Colors
+No fixed color list.
+Admin can create any color.
+A new color such as Dusty Mauve must automatically appear on the product page.
+
+E. Variants + Stock
+Data model should support variant-level inventory:
+Black / M = 4
+Black / L = 2
+White / M = 7
+
+F. Collections
+Admin can create collections such as:
+New Drop
+Summer Edit
+Under ₹999
+Staff Picks
+Restocked
+Products may belong to multiple collections.
+
+G. Tags
+Custom tags such as:
+New
+Best Seller
+Limited
+Restocked
+Oversized
+
+H. Product Attributes
+Support optional flexible attributes:
+material
+fit
+fabric
+GSM
+pattern/style
+custom fields
+
+I. Shipping/Courier
+Admin can manage:
+courier
+tracking ID
+delivery estimate
+
+Core rule:
+Website product-related options should not require code edits.
+
+12. ADMIN GLOBAL SEARCH
+Add a global search at the top of Admin.
+
+Search:
+- product name
+- SKU
+- order ID
+- customer name
+- phone
+- category
+- collection
+- color
+- size
+- tracking ID
+- broadcast/template
+- setting
+
+Examples:
+FLIQ-00125 → exact order
+Sleeveless Tops → category + products
+black hoodie → matching products
+WhatsApp → relevant settings/section
+
+Click result → direct edit/config screen.
+
+Goal:
+“I know what I want → search it → configure it immediately.”
+
+13. ROLE-BASED ADMIN — 3 TOTAL USERS
+There are 3 people total.
+
+1) OWNER / SUPER ADMIN
+Full access:
+- dashboard
+- products
+- categories
+- collections
+- inventory
+- orders
+- fulfillment
+- pricing
+- discounts
+- WhatsApp/broadcasts
+- analytics
+- staff permissions
+- store settings
+- refunds/cancellations approval
+- all configuration
+
+2) INVENTORY & CATALOG MANAGER
+Primary access:
+- products
+- Google Sheets import/sync
+- stock
+- sizes
+- colors
+- variants
+- images
+- descriptions
+- categories/collections as permitted
+- low-stock management
+
+3) ORDERS & CUSTOMER OPERATIONS
+Primary access:
+- paid orders
+- fulfillment board
+- courier/tracking
+- WhatsApp order updates
+- customer issues
+- returns/exchanges
+- delivery/customer operations
+
+Requirements:
+- each user has separate login
+- dashboard is role-based
+- relevant tools appear first
+- unauthorized sections must be blocked, not merely hidden
+- owner sees everything
+
+14. ADMIN TODAY / ACTION CENTER
+Create an actionable overview:
+- new paid orders
+- orders to pack
+- dispatched orders
+- low stock
+- out-of-stock variants
+- customer issues
+- failed payments
+- pending tracking updates
+
+Example:
+12 new orders
+8 to pack
+3 low-stock products
+2 customer issues
+1 failed payment
+
+The dashboard should answer:
+“What needs attention right now?”
+
+15. EXPECTED DELIVERY
+Show expected delivery on:
+- confirmation page
+- Track Order page
+- WhatsApp confirmation
+- Admin order record
+
+Admin should be able to configure the default delivery estimate.
+
+16. DATA / BACKEND DIRECTION
+The current demo/browser-only storage is not enough for production.
+
+Production data that must live in a real shared backend:
+- products
+- variants
+- inventory
+- categories
+- collections
+- orders
+- payment metadata
+- customers
+- staff accounts/roles
+- fulfillment history
+- tracking info
+- WhatsApp logs
+- settings
+
+For preview:
+preserve functionality but keep a clean data abstraction.
+
+For production:
+keep the code ready to connect to a real backend such as Supabase/Firebase/Postgres-compatible infrastructure.
+Keep secrets server-side.
+
+17. OWNER OPERABILITY PRINCIPLE
+The owner must NOT need a developer for routine store management.
+
+Routine tasks from Admin:
+- add product type
+- add category
+- add custom size
+- add color
+- import products
+- edit price
+- update stock
+- publish/unpublish
+- create collections
+- fulfill orders
+- update courier/tracking
+- send WhatsApp updates
+- run broadcasts
+- search/configure data
+- manage staff roles
+
+Developer should only be required for:
+- real bugs
+- infrastructure changes
+- major new features
+- migrations/upgrades
+
+18. RELIABILITY
+Keep code recovery-friendly:
+- clear logs
+- useful error messages
+- payment/webhook logging
+- no silent failures
+- isolated third-party integrations
+- rollback-friendly deployment
+- no hardcoded secrets
+- avoid fragile global state
+- audit important admin actions
+
+19. IMPLEMENTATION ORDER
+PHASE 1 — INSPECT
+- inspect repository
+- identify current architecture
+- identify existing Razorpay flow
+- identify what already works
+- do not rewrite unnecessarily
+
+PHASE 2 — PROTECT CHECKOUT
+- preserve/fix Razorpay TEST on Netlify first
+- do not proceed with claims of completion if payments break
+
+PHASE 3 — ORDER MODEL
+- unique order ID
+- confirmation page
+- expected delivery
+- persistent order/status structure
+
+PHASE 4 — FULFILLMENT
+- drag/drop board
+- status history
+- tracking/courier
+- customer Track Order page
+
+PHASE 5 — ADMIN ARCHITECTURE
+- roles
+- global search
+- action center
+- dynamic categories/sizes/colors/collections/tags
+
+PHASE 6 — PRODUCT IMPORT
+- Google Sheets workflow
+- preview/validation/import
+- dynamic mapping
+
+PHASE 7 — WHATSAPP
+- order confirmations
+- tracking link
+- broadcasts
+- graceful configuration
+
+PHASE 8 — FINAL QA
+Test all major flows on deployed Netlify preview.
+
+20. FINAL ACCEPTANCE TESTS
+A. Checkout
+- add item to cart
+- checkout
+- Razorpay TEST popup opens
+- successful test payment verifies
+- order created exactly once
+- inventory reduces
+- order appears in Admin
+- confirmation page appears
+
+B. Confirmation
+- exact FLIQ messaging present
+- correct order details
+- expected delivery visible
+- Track Order works
+
+C. Unique IDs
+- multiple orders produce unique IDs
+- IDs searchable in Admin
+
+D. Fulfillment
+- drag order between stages
+- status persists
+- customer tracking updates
+- history records change
+
+E. Dynamic catalog
+- Admin creates a brand-new category never coded before
+- add product to it
+- website displays it without developer/code change
+
+F. Custom options
+- new color not previously present appears on product page
+- custom size such as Free Size works
+
+G. Google Sheets
+- import 10 products
+- size stock maps correctly
+- description imports
+- colors import
+- four images import
+- invalid rows clearly flagged
+- no silent failures
+
+H. Roles
+- Owner sees all
+- Inventory user sees catalog/inventory tools
+- Orders user sees fulfillment/customer ops
+- unauthorized areas blocked
+
+I. Search
+- search product
+- search order ID
+- search customer
+- search category
+- navigate directly to result
+
+J. Netlify
+- /
+- /admin
+- /checkout
+- tracking route
+all work after deploy
+- Razorpay server functions work
+- no localhost dependency
+
+21. DELIVERY REQUIREMENTS
+After implementation:
+1) concise summary of changes
+2) files added/changed
+3) required environment variables
+4) external credentials still needed
+5) exact Netlify deployment steps
+6) exact test steps
+7) clearly separate prototype-only from production-ready items
+8) do not claim something works unless tested
+
+FINAL PRIORITY:
+This must feel like a real store operations system, not a static demo.
+
+The owner and two staff members should be able to run the website day-to-day from Admin without repeated developer intervention.
