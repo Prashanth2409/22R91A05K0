@@ -4,12 +4,15 @@
   const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let busy=false,shippingFee=0,attempt=null;
   let requestId=crypto.randomUUID();
-  const recoveryKey='fliq-checkout-recovery';
+  const recoveryKey='fliq-checkout-recovery-v2';
+  try{sessionStorage.removeItem('fliq-checkout-recovery');}catch{}
   try{attempt=JSON.parse(sessionStorage.getItem(recoveryKey)||'null');}catch{}
+  const clearRecovery=()=>{attempt=null;requestId=crypto.randomUUID();try{sessionStorage.removeItem(recoveryKey);}catch{}};
   const api=async(path,body)=>{const r=await fetch('/api/'+path,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)});const data=await r.json();if(!r.ok)throw Error(data.error||'Request failed');return data;};
   const razorpayApi=async(path,body)=>{const r=await fetch('/__fliq/razorpay/'+path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined,cache:'no-store'});let data={};try{data=await r.json();}catch{}if(!r.ok)throw Error(data.error||('Razorpay '+path+' failed'));return data;};
   try{const r=await fetch('/api/store-settings',{cache:'no-store'});if(r.ok){const s=await r.json();shippingFee=Number(s?.shipping?.flatFee||0);}}catch{}
   function finish(order){
+    clearRecovery();
     if(order.refund_required){root.innerHTML='<h1 class="display">PAYMENT RECEIVED.</h1><p>Your payment needs an owner review because stock changed. Do not pay again.</p><p>'+esc(order.id)+'</p>';return;}
     store.clearCart();window.dispatchEvent(new Event('fliq-store-change'));
     const itemRows=(order.items||[]).map(x=>`<div class="confirmation-item"><img src="${esc(x.image||'')}" alt=""><div><strong>${esc(x.name)}</strong><span>${esc(x.color||'Default')} / ${esc(x.size)} / QTY ${x.quantity}</span></div><b>${money(x.price*x.quantity/100)}</b></div>`).join('');
@@ -36,7 +39,6 @@
     busy=true;button.disabled=true;
     try{
       const customer=Object.fromEntries(new FormData(form));customer.whatsappConsent=form.elements.whatsappConsent.checked;customer.restockConsent=form.elements.restockConsent.checked;
-      // Avoid browser address/password-manager submit prompts stealing focus from Razorpay.
       if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
       say('Creating Razorpay TEST order…');
       await loadRazorpay();
@@ -67,7 +69,6 @@
       razorpay.on('payment.failed',response=>{busy=false;button.disabled=false;say(response?.error?.description||'Razorpay test payment failed. Try again.');api('checkout/failure',{...attempt,event:'failed'}).catch(()=>{});});
       say('Opening Razorpay TEST Checkout…');
       razorpay.open();
-      // If Razorpay does not mount, surface a useful message instead of hanging forever.
       setTimeout(()=>{if(busy&&!document.querySelector('iframe[src*="razorpay"], .razorpay-container'))say('Razorpay was asked to open but the browser blocked the checkout window. Disable Shields/ad-blocking for this store and retry.');},2500);
     }catch(err){busy=false;button.disabled=false;say(err.message||String(err));}
   });
