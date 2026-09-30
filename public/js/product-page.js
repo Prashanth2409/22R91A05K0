@@ -65,7 +65,7 @@ ${p.images?.length>1?p.images.map((src,i)=>`<figure class="product-gallery-figur
         <p class="product-kicker meta">FLIQ / Issue 001 / Unisex</p>
         <h1 class="product-title display">${esc(p.name)}</h1>
         <div class="product-price-wrap"><p class="product-price">${money(p.price)}</p>${p.originalPrice?`<del class="product-old-price">${money(p.originalPrice)}</del>`:''}<span class="product-price-note meta">Demo price / taxes included in prototype</span></div>
-        <div class="product-rating-line"><span class="product-rating-score">4.8</span><span class="product-rating-stars" aria-label="4.8 out of 5 stars">★★★★★</span><span class="meta">Sample review preview</span></div>
+        <div class="product-rating-line">No reviews yet</div>
         <p class="product-copy">${esc(p.description)}</p>
 
         <div class="product-option-block">
@@ -81,7 +81,7 @@ ${p.images?.length>1?p.images.map((src,i)=>`<figure class="product-gallery-figur
 
         <div class="quantity-label"><span>Quantity</span><div class="detail-quantity-stepper" role="group" aria-label="Product quantity"><button type="button" data-page-qty="-1" aria-label="Decrease quantity" disabled>−</button><span id="page-qty-value" class="detail-quantity-value" aria-live="polite">1</span><button type="button" data-page-qty="1" aria-label="Increase quantity">+</button></div></div>
         <div class="detail-actions"><button type="button" class="solid-button" data-page-add disabled>Choose colour & size</button><button type="button" class="outline-button" data-page-wish aria-label="Save ${esc(p.name)} to wishlist">${heart}</button></div>
-        <button type="button" class="text-button" data-shop="cart">View cart →</button>
+        <button type="button" class="outline-button" data-shop="cart" data-view-cart disabled>View Cart →</button>
         <p class="product-inline-status" role="status"></p>
 
         <div class="delivery-check">
@@ -110,10 +110,7 @@ ${p.images?.length>1?p.images.map((src,i)=>`<figure class="product-gallery-figur
         <div class="info-content"><div class="shipping-grid"><div class="shipping-card"><h3>Shipment</h3><ul><li>Enter a 6-digit PIN above to preview delivery availability.</li><li>Prototype estimate: 2–5 working days after dispatch for supported Indian PIN codes.</li><li>Online payment only. Cash on delivery is not available. Final shipping terms require store approval.</li></ul></div><div class="shipping-card"><h3>All sales final</h3><ul><li>No returns or exchanges.</li><li>Online payment only. No cash on delivery.</li><li>Contact the store for exceptional payment, dispute or legally required resolutions.</li></ul><a href="/policies.html">Read store policies ↗</a></div></div><p class="shipping-disclaimer"><strong>Prototype disclaimer:</strong> The store intends all sales to be final with no returns or exchanges. Prototype delivery estimates must be replaced with confirmed courier details. Exceptional operational and legally required resolutions remain available.</p></div>
       </article>
 
-      <article class="info-block" id="reviews">
-        <div class="info-kicker"><span class="meta">03 / Community</span><h2 class="display">Reviews<span class="accent">.</span></h2></div>
-        <div class="info-content"><div class="reviews-summary"><div><div class="review-score">4.8<small>/5</small></div><span class="meta">Prototype rating preview</span></div><div class="review-bars"><div class="review-bar"><span>5 ★</span><div class="review-bar-track"><span style="--rating-width:88%"></span></div><span>88%</span></div><div class="review-bar"><span>4 ★</span><div class="review-bar-track"><span style="--rating-width:9%"></span></div><span>9%</span></div><div class="review-bar"><span>3 ★</span><div class="review-bar-track"><span style="--rating-width:3%"></span></div><span>3%</span></div><div class="review-bar"><span>2 ★</span><div class="review-bar-track"><span style="--rating-width:0%"></span></div><span>0%</span></div><div class="review-bar"><span>1 ★</span><div class="review-bar-track"><span style="--rating-width:0%"></span></div><span>0%</span></div></div></div><div class="review-list"><article class="review-card"><div><span class="meta">Sample review / 01</span><div class="review-card-stars">★★★★★</div><span class="meta">Demo customer · Verified-style preview</span></div><div><h3>Strong silhouette.</h3><p>The oversized proportions and heavier fabric make the piece feel structured without losing the relaxed streetwear shape. This is sample copy for the prototype review layout, not a real customer testimonial.</p></div></article><article class="review-card"><div><span class="meta">Sample review / 02</span><div class="review-card-stars">★★★★★</div><span class="meta">Demo customer · Verified-style preview</span></div><div><h3>Easy rotation piece.</h3><p>The layout demonstrates how real buyer feedback can appear once a review system is connected. This text is intentionally marked as prototype content.</p></div></article></div></div>
-      </article>
+      <article class="info-block" id="reviews"><h2 class="display">Reviews</h2><div class="info-content"><p>Loading verified reviews…</p></div></article>
 
       <article class="info-block" id="questions">
         <div class="info-kicker"><span class="meta">04 / Help</span><h2 class="display">Questions<span class="accent">.</span></h2></div>
@@ -158,7 +155,7 @@ ${p.images?.length>1?p.images.map((src,i)=>`<figure class="product-gallery-figur
     if(!selectedColor||!selectedSize)return;
     if(!store.add(p.id,selectedSize,qty,selectedColor)){status.textContent='This size is sold out or your cart exceeds available stock.';return;}
     status.textContent=`Added ${qty} × ${p.name} / ${selectedColor} / ${selectedSize} to cart.`;
-    add.textContent='Added ✓ · Add another';
+    add.textContent='Added ✓ · Add another';root.querySelector('[data-view-cart]').disabled=false;
     mobileAdd.textContent='Added ✓';
     window.dispatchEvent(new Event('fliq-store-change'));
     setTimeout(updatePurchase,1200);

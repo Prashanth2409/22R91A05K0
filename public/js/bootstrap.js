@@ -1,9 +1,9 @@
 /* Fetch live catalog data before starting the original FLIQ modules. Fall back to the bundled catalog so storefront navigation still renders if the API is briefly unavailable. */
 (async function(){
   'use strict';
-  const params=new URLSearchParams(location.search),query=new URLSearchParams();
+  const params=new URLSearchParams(location.search),query=new URLSearchParams();query.set('continuous','1');
   if(document.querySelector('[data-catalog-mode="drop"]')){query.set('featured','1');query.set('limit','6');}
-  for(const key of ['collection','page','q'])if(params.has(key))query.set(key,params.get(key));
+  for(const key of ['q'])if(params.has(key))query.set(key,params.get(key));
   if(params.has('id'))query.set('product',params.get('id'));
   let stored;try{stored=JSON.parse(localStorage.getItem('fliq-shop-v1')||'{}');}catch{stored={};}
   const ids=[...(stored.cart||[]).map(x=>x.id),...(stored.wishlist||[])];query.set('cart',[...new Set(ids)].slice(0,100).join(','));
@@ -23,13 +23,16 @@
     if(!window.FliqCatalog.pagination)window.FliqCatalog.pagination={page:1,limit:window.FliqCatalog.products.length,total:window.FliqCatalog.products.length,pages:1};
     if(!window.FliqCatalog.revision)window.FliqCatalog.revision=0;
   }
+  if(!live&&document.querySelector('[data-catalog-mode=drop]'))window.FliqCatalog.listingIds=[];
   try{
     await load('/js/store-settings.js');
     await load('/js/store.js');
+    await load('/js/collection-layout.js');
     await load('/js/shop.js');
     if(document.getElementById('product-page-root'))await load('/js/product-page.js');
     await load('/js/main.js');
     if(live)await load('/js/live-catalog.js');
+    await load('/js/reviews.js');
     if(document.getElementById('policies-root')){
       try{
         const response=await fetch('/api/store-settings',{cache:'no-store'});

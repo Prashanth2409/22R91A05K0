@@ -17,7 +17,7 @@ export function seed(){
 }
 export function quantities(p){p.stock={};for(const v of p.variants||[])p.stock[v.size]=(p.stock[v.size]||0)+v.quantity;p.sizes=Object.keys(p.stock);p.colors=[...new Set((p.variants||[]).map(v=>v.color))];return p;}
 export function state(p){return p.status==='archived'?'Archived':p.status==='draft'?'Draft':p.variants.every(v=>v.quantity===0)?'Out of Stock':'Active';}
-export function visible(p,d){return p.status==='published'&&p.authorizedToSell&&(p.collections||[]).some(c=>d.categories.some(x=>x.id===c&&!x.hidden));}
+export function visible(p,d){return p.status==='published'&&p.authorizedToSell&&(p.collections||[]).some(c=>d.categories.some(x=>x.id===c&&!x.hidden&&(!x.parentId||d.categories.some(parent=>parent.id===x.parentId&&!parent.hidden))));}
 export function imageURL(s){return typeof s==='string'&&s.length<2048&&(/^\/?img\/[\w./-]+$/.test(s)||/^\/api\/images\/[a-f0-9-]+$/.test(s)||/^https:\/\//.test(s));}
 export function product(input,existing,d){
  const p={...existing};
@@ -37,6 +37,7 @@ export function product(input,existing,d){
  if(!vs){const colors=input.colors||p.colors||['Default'];if(colors.length!==1&&input.stock)fail('Use the color / size variant matrix for products with multiple colors.');vs=input.stock?Object.entries(input.stock).map(([size,quantity])=>({size,color:colors[0]||'Default',quantity})):p.variants;}
  if(!Array.isArray(vs)||!vs.length||vs.length>250)fail('Provide 1–250 size/color variants.');
  const keys=new Set();p.variants=vs.map(v=>{const size=String(v.size||'').trim(),color=String(v.color||'').trim(),quantity=Number(v.quantity);if(!size||!color||size.length>80||color.length>80||!Number.isSafeInteger(quantity)||quantity<0||quantity>1000000)fail('Every variant needs size, color and a nonnegative whole stock quantity.');const k=JSON.stringify([size,color]);if(keys.has(k))fail('Duplicate color / size variant.');keys.add(k);return {size,color,quantity};});
+ p.position=Number(input.position??p.position??0);if(!Number.isSafeInteger(p.position)||p.position<0)fail('Product order must be a nonnegative integer.');
  p.id=p.id||id('product');p.version=(p.version||0)+1;p.updated_at=now();return quantities(p);
 }
 export function paginate(items,sp){const page=Math.max(1,Math.min(100000,Math.floor(Number(sp.get('page'))||1))),limit=Math.max(1,Math.min(100,Math.floor(Number(sp.get('limit'))||24)));return {items:items.slice((page-1)*limit,page*limit),total:items.length,page,limit,pages:Math.ceil(items.length/limit)};}
